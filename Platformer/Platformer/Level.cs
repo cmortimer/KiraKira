@@ -99,6 +99,15 @@ namespace Platformer
 
             LoadTiles(fileStream);
 
+            //Set enemies player
+            foreach (Enemy e in enemies)
+            {
+                e.setPlayer(player);
+            }
+
+            //Set enemies for player
+            player.Enemies = enemies;
+
             // Load background layer textures. For now, all levels must
             // use the same backgrounds and only use the left-most part of them.
             layers = new Texture2D[3];
@@ -446,6 +455,7 @@ namespace Platformer
         /// </summary>
         private void UpdateEnemies(GameTime gameTime)
         {
+            List<Enemy> removal = new List<Enemy>();
             foreach (Enemy enemy in enemies)
             {
                 enemy.Update(gameTime);
@@ -455,6 +465,17 @@ namespace Platformer
                 {
                     OnPlayerKilled(enemy);
                 }
+
+                //Dead enemies need to be removed
+                if (enemy.isDead)
+                {
+                    removal.Add(enemy);
+                }
+            }
+
+            foreach (Enemy e in removal)
+            {
+                enemies.Remove(e);
             }
         }
 

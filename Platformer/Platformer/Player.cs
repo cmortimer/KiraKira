@@ -8,6 +8,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -35,6 +36,32 @@ namespace Platformer
         private SoundEffect jumpSound;
         private SoundEffect fallSound;
 
+        //Possession
+        private enum PossessionStatus               //Possible Possessions
+        {
+            None, Sushi, Lantern, Sword
+        }
+
+        //Attacking
+        private bool isAttacking;
+        private bool dePossess;
+
+        private PossessionStatus possession;        //Current possession
+        private List<Enemy> enemies;                //Possible possession targets
+        private Enemy target;
+        public List<Enemy> Enemies                  //Used to set the list of enemies each level
+        {
+            get
+            {
+                return enemies;
+            }
+            set
+            {
+                enemies = value;
+            }
+        }
+
+        
         public Level Level
         {
             get { return level; }
@@ -95,6 +122,8 @@ namespace Platformer
         /// Current user movement input.
         /// </summary>
         private float movement;
+
+        public float direction;
 
         // Jumping state
         private bool isJumping;
@@ -197,9 +226,24 @@ namespace Platformer
                 }
             }
 
+            //If the player is attacking
+            if (isAttacking)
+            {
+                this.Attack();
+            }
+
+            //If the player is depossessing
+            if (dePossess)
+            {
+                target.isDead = true;
+                possession = PossessionStatus.None;
+            }
+
             // Clear input.
             movement = 0.0f;
             isJumping = false;
+            isAttacking = false;
+            dePossess = false;
         }
 
         /// <summary>
@@ -244,13 +288,24 @@ namespace Platformer
                 movement = 1.0f;
             }
 
+            //Set direction to movement
+            this.direction = movement;
+
             // Check if the player wants to jump.
             isJumping =
                 gamePadState.IsButtonDown(JumpButton) ||
-                keyboardState.IsKeyDown(Keys.Space) ||
+                /*keyboardState.IsKeyDown(Keys.Space) ||*/
                 keyboardState.IsKeyDown(Keys.Up) ||
                 keyboardState.IsKeyDown(Keys.W) ||
                 touchState.AnyTouch();
+
+            //Check if the player is attacking
+            isAttacking =
+                keyboardState.IsKeyDown(Keys.Space);
+
+            //Check to see if player wants to release possession
+            dePossess =
+                possession != PossessionStatus.None && keyboardState.IsKeyDown(Keys.V);
         }
 
         /// <summary>
@@ -348,6 +403,59 @@ namespace Platformer
         }
 
         /// <summary>
+        /// The players attack function, functions differently depending on possession status 
+        /// </summary>
+        public void Attack()
+        {   
+            //Loop through enemies
+            foreach (Enemy e in enemies)
+            {
+                //Enemies to the left
+                if (direction == -1 && this.Position.X > e.Position.X && e.Position.X > this.Position.X - 100)
+                {
+                    switch (possession)
+                    {
+                        case PossessionStatus.None:
+                            e.possessed = true;
+                            target = e;
+                            possession = PossessionStatus.Lantern;
+                            break;
+                        case PossessionStatus.Sushi:
+
+                            break;
+                        case PossessionStatus.Lantern:
+
+                            break;
+                        case PossessionStatus.Sword:
+
+                            break;
+                    }
+                }
+                //Enemies to the right
+                else if (direction == 1 && this.Position.X < e.Position.X && e.Position.X < this.Position.X + 100)
+                {
+                    switch (possession)
+                    {
+                        case PossessionStatus.None:
+                            e.possessed = true;
+                            target = e;
+                            possession = PossessionStatus.Lantern;
+                            break;
+                        case PossessionStatus.Sushi:
+
+                            break;
+                        case PossessionStatus.Lantern:
+
+                            break;
+                        case PossessionStatus.Sword:
+
+                            break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Detects and resolves all collisions between the player and his neighboring
         /// tiles. When a collision is detected, the player is pushed away along one
         /// axis to prevent overlapping. There is some special logic for the Y axis to
@@ -425,14 +533,18 @@ namespace Platformer
         /// </param>
         public void OnKilled(Enemy killedBy)
         {
-            isAlive = false;
+            //Player should only die if enemy isn't possessed
+            if (!killedBy.possessed)
+            {
+                isAlive = false;
 
-            if (killedBy != null)
-                killedSound.Play();
-            else
-                fallSound.Play();
+                if (killedBy != null)
+                    killedSound.Play();
+                else
+                    fallSound.Play();
 
-            sprite.PlayAnimation(dieAnimation);
+                sprite.PlayAnimation(dieAnimation);
+            }
         }
 
         /// <summary>
@@ -455,7 +567,8 @@ namespace Platformer
                 flip = SpriteEffects.None;
 
             // Draw that sprite.
-            sprite.Draw(gameTime, spriteBatch, Position, flip);
+            if (possession == PossessionStatus.None)
+                sprite.Draw(gameTime, spriteBatch, Position, flip);
         }
     }
 }

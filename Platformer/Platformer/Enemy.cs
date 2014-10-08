@@ -13,6 +13,8 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Platformer
 {
+
+
     /// <summary>
     /// Facing direction along the X axis.
     /// </summary>
@@ -20,6 +22,7 @@ namespace Platformer
     {
         Left = -1,
         Right = 1,
+        Idle = 0
     }
 
     /// <summary>
@@ -27,6 +30,12 @@ namespace Platformer
     /// </summary>
     class Enemy
     {
+        //Possession variables
+        private Player player;      //The player doing the possessing
+        public bool possessed;
+        public bool isDead;         //After depossession
+        
+
         public Level Level
         {
             get { return level; }
@@ -89,6 +98,7 @@ namespace Platformer
         {
             this.level = level;
             this.position = position;
+            //this.possessed = true;
 
             LoadContent(spriteSet);
         }
@@ -118,36 +128,57 @@ namespace Platformer
         /// </summary>
         public void Update(GameTime gameTime)
         {
-            float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            // Calculate tile position based on the side we are walking towards.
-            float posX = Position.X + localBounds.Width / 2 * (int)direction;
-            int tileX = (int)Math.Floor(posX / Tile.Width) - (int)direction;
-            int tileY = (int)Math.Floor(Position.Y / Tile.Height);
-
-            if (waitTime > 0)
+            //Change orientation and position to player position
+            if (possessed)
             {
-                // Wait for some amount of time.
-                waitTime = Math.Max(0.0f, waitTime - (float)gameTime.ElapsedGameTime.TotalSeconds);
-                if (waitTime <= 0.0f)
+                if (player.direction == 1)
                 {
-                    // Then turn around.
-                    direction = (FaceDirection)(-(int)direction);
+                    
+                    this.direction = FaceDirection.Right;
                 }
-            }
-            else
-            {
-                // If we are about to run into a wall or off a cliff, start waiting.
-                if (Level.GetCollision(tileX + (int)direction, tileY - 1) == TileCollision.Impassable ||
-                    Level.GetCollision(tileX + (int)direction, tileY) == TileCollision.Passable)
+                else if (player.direction == -1)
                 {
-                    waitTime = MaxWaitTime;
+                    this.direction = FaceDirection.Left;
                 }
                 else
                 {
-                    // Move in the current direction.
-                    Vector2 velocity = new Vector2((int)direction * MoveSpeed * elapsed, 0.0f);
-                    position = position + velocity;
+                    this.direction = FaceDirection.Idle;
+                }
+                this.position = player.Position;
+            }
+            else
+            {
+                float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+                // Calculate tile position based on the side we are walking towards.
+                float posX = Position.X + localBounds.Width / 2 * (int)direction;
+                int tileX = (int)Math.Floor(posX / Tile.Width) - (int)direction;
+                int tileY = (int)Math.Floor(Position.Y / Tile.Height);
+
+                if (waitTime > 0)
+                {
+                    // Wait for some amount of time.
+                    waitTime = Math.Max(0.0f, waitTime - (float)gameTime.ElapsedGameTime.TotalSeconds);
+                    if (waitTime <= 0.0f)
+                    {
+                        // Then turn around.
+                        direction = (FaceDirection)(-(int)direction);
+                    }
+                }
+                else
+                {
+                    // If we are about to run into a wall or off a cliff, start waiting.
+                    if (Level.GetCollision(tileX + (int)direction, tileY - 1) == TileCollision.Impassable ||
+                        Level.GetCollision(tileX + (int)direction, tileY) == TileCollision.Passable)
+                    {
+                        waitTime = MaxWaitTime;
+                    }
+                    else
+                    {
+                        // Move in the current direction.
+                        Vector2 velocity = new Vector2((int)direction * MoveSpeed * elapsed, 0.0f);
+                        position = position + velocity;
+                    }
                 }
             }
         }
@@ -157,11 +188,11 @@ namespace Platformer
         /// </summary>
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
-            // Stop running when the game is paused or before turning around.
+            // Stop running when the game is paused, before turning around, or if the possessing player is idle.
             if (!Level.Player.IsAlive ||
                 Level.ReachedExit ||
                 Level.TimeRemaining == TimeSpan.Zero ||
-                waitTime > 0)
+                waitTime > 0 || this.direction == FaceDirection.Idle)
             {
                 sprite.PlayAnimation(idleAnimation);
             }
@@ -174,6 +205,11 @@ namespace Platformer
             // Draw facing the way the enemy is moving.
             SpriteEffects flip = direction > 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
             sprite.Draw(gameTime, spriteBatch, Position, flip);
+        }
+
+        public void setPlayer(Player p)
+        {
+            this.player = p;
         }
     }
 }
