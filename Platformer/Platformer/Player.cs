@@ -45,6 +45,9 @@ namespace Platformer
         //Attacking
         private bool isAttacking;
         private bool dePossess;
+        private int attackHeight = 20;
+        private int attackWidth = 100;
+        private Rectangle attackRange;
 
         private PossessionStatus possession;        //Current possession
         private List<Enemy> enemies;                //Possible possession targets
@@ -123,6 +126,8 @@ namespace Platformer
         /// </summary>
         private float movement;
 
+        public float pubMove;       //A public version of movement that won't be reset
+
         public float direction;
 
         // Jumping state
@@ -155,6 +160,7 @@ namespace Platformer
             LoadContent();
 
             Reset(position);
+            this.attackRange = new Rectangle(this.BoundingRectangle.X, this.BoundingRectangle.Y, attackWidth, attackHeight);         //Set the default position of the attack range
         }
 
         /// <summary>
@@ -188,6 +194,7 @@ namespace Platformer
         /// <param name="position">The position to come to life at.</param>
         public void Reset(Vector2 position)
         {
+            possession = PossessionStatus.None;
             Position = position;
             Velocity = Vector2.Zero;
             isAlive = true;
@@ -244,6 +251,13 @@ namespace Platformer
             isJumping = false;
             isAttacking = false;
             dePossess = false;
+            
+            //Update attackRange
+            this.attackRange.Y = BoundingRectangle.Y;
+            if (direction == -1)
+                this.attackRange.X = BoundingRectangle.X - attackWidth;
+            else
+                this.attackRange.X = BoundingRectangle.X;
         }
 
         /// <summary>
@@ -288,8 +302,12 @@ namespace Platformer
                 movement = 1.0f;
             }
 
-            //Set direction to movement
-            this.direction = movement;
+            //Set direction and pubmove to movement
+            if (movement != 0)
+            {
+                this.direction = movement;
+            }
+            this.pubMove = movement;
 
             // Check if the player wants to jump.
             isJumping =
@@ -406,40 +424,19 @@ namespace Platformer
         /// The players attack function, functions differently depending on possession status 
         /// </summary>
         public void Attack()
-        {   
+        {
+            
             //Loop through enemies
             foreach (Enemy e in enemies)
-            {
-                //Enemies to the left
-                if (direction == -1 && this.Position.X > e.Position.X && e.Position.X > this.Position.X - 100)
+            {       
+                if (this.attackRange.Intersects(e.BoundingRectangle))
                 {
                     switch (possession)
                     {
                         case PossessionStatus.None:
                             e.possessed = true;
                             target = e;
-                            possession = PossessionStatus.Lantern;
-                            break;
-                        case PossessionStatus.Sushi:
-
-                            break;
-                        case PossessionStatus.Lantern:
-
-                            break;
-                        case PossessionStatus.Sword:
-
-                            break;
-                    }
-                }
-                //Enemies to the right
-                else if (direction == 1 && this.Position.X < e.Position.X && e.Position.X < this.Position.X + 100)
-                {
-                    switch (possession)
-                    {
-                        case PossessionStatus.None:
-                            e.possessed = true;
-                            target = e;
-                            possession = PossessionStatus.Lantern;
+                            possession = PossessionStatus.Sushi;
                             break;
                         case PossessionStatus.Sushi:
 
@@ -568,7 +565,11 @@ namespace Platformer
 
             // Draw that sprite.
             if (possession == PossessionStatus.None)
+            {
                 sprite.Draw(gameTime, spriteBatch, Position, flip);
+                Vector2 test = new Vector2(attackRange.X, attackRange.Y);
+                //sprite.Draw(gameTime, spriteBatch, test, flip);
+            }
         }
     }
 }

@@ -131,12 +131,12 @@ namespace Platformer
             //Change orientation and position to player position
             if (possessed)
             {
-                if (player.direction == 1)
+                System.Diagnostics.Debug.WriteLine(this.direction);
+                if (player.pubMove == 1)
                 {
-                    
                     this.direction = FaceDirection.Right;
                 }
-                else if (player.direction == -1)
+                else if (player.pubMove == -1)
                 {
                     this.direction = FaceDirection.Left;
                 }
