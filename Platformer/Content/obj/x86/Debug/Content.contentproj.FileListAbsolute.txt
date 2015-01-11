@@ -1,2 +1,0 @@
-\\banner.main.ad.rit.edu\students\cmm7393\IGMProfile\Documents\RIT\GDD2\Platformer_4_0\Platformer\Content\obj\x86\Debug\Content.contentprojResolveAssemblyReference.cache
-C:\Users\Cody\Documents\GitHub\KiraKira\Platformer\Content\obj\x86\Debug\Content.contentprojResolveAssemblyReference.cache
